@@ -28,7 +28,7 @@ First, the data files are as follows:
 
 We have a couple of helper files, with code and descriptions, to get you all off the ground.
 
-- [GT MLSE Data Hackathon -- Starter Code.ipynb]("./GT MLSE Data Hackathon -- Starter Code.ipynb"). If you are a pyhon hacker, and you like the pandas library, this code should help you get started. We explore some simple ideas that connect the weather, day of the week, and hour of the day, to the amount of use of the relay bike program.
+- [GT MLSE Data Hackathon -- Starter Code.ipynb](GT%20MLSE%20Data%20Hackathon%20--%20Starter%20Code.ipynb). If you are a pyhon hacker, and you like the pandas library, this code should help you get started. We explore some simple ideas that connect the weather, day of the week, and hour of the day, to the amount of use of the relay bike program.
 - If you are more of an R hacker, a slightly different analysis can be found in [R_code_starter.Rmd](R_code_starter.Rmd)
 
 ## How to submit your solution
