@@ -1,0 +1,133 @@
+
+ 
+```{r}
+setwd("/Users/ericmsch/Dropbox/mlgt_hackathon/")
+library(tidyverse) # use %>% vs as pipe (|) # magrittr "this is not a pipe"
+library(lubridate) # see crib sheet: https://rawgit.com/rstudio/cheatsheets/master/lubridate.pdf
+```
+
+Read in data
+```{r}
+trip_log_raw <- read_csv("relay_ride_data_cleaned.csv")
+```
+Look at sample rows
+```{r}
+dim(trip_log_raw)
+# first ten records
+trip_log_raw %>% head(10)
+# a random set of 10 entries
+trip_log_raw %>% sample_n(10)
+```
+
+Check on date-times 
+```{r}
+trip_log = trip_log_raw %>% mutate(
+  start_date = as_date(start_time_iso),
+  start_wday = wday(start_date,label = TRUE,abbr = TRUE), 
+  time_h = hour(as_datetime(start_time_iso)),
+
+  # total time in seconds
+  time_interval = interval(start_time_iso,end_time_iso),
+  total_time_s = as.numeric(seconds(time_interval)),
+  time_error_flag = case_when(
+    total_time_s < 0 ~ "negative time!",
+    total_time_s >= 0 & total_time_s < 60*60*24 ~ "ok",
+    total_time_s >= 60*60*24 ~ "longer than 24 hrs!"
+    )
+  )
+trip_log %>% summarize(
+  min(start_time_iso),
+  max(start_time_iso)
+)
+
+trip_log %>% 
+  select(total_time_s) %>%
+  summary(total_time_s)
+
+trip_log %>%
+  arrange(total_time_s) %>% 
+  filter(total_time_s < 0) 
+
+trip_log %>% 
+  group_by(time_error_flag) %>% 
+  summarize(n())
+
+trip_log %>%
+  ggplot(aes(x=total_time_s)) + 
+    geom_histogram() + 
+  facet_wrap(~time_error_flag,scales="free")
+```
+
+Summarizing trips by user
+```{r}
+by_user = trip_log %>% 
+  group_by(user_id) %>% 
+  summarize(
+    # number of rides taken
+    n_rides = n(),
+    # first ride in the data
+    first_ride_start = min(start_time_iso),
+    first_ride_end = min(end_time_iso),
+    first_day = date(first_ride_start),
+    # most recent ride in the data
+    recent_ride_start = max(start_time_iso),
+    recent_ride_start = max(end_time_iso)
+  ) 
+summary(by_user$n_rides)
+quantile(by_user$n_rides, c(0,.25,.5,.75,.90,.95,.975,.99,.999))
+
+by_user %>% ggplot(aes(x=n_rides)) + 
+  geom_histogram()
+
+by_user %>% ggplot(aes(x=n_rides)) +
+  geom_histogram() + 
+  scale_x_continuous(trans="log10")
+
+```
+The top x% of users account for what percent of all rides?
+```{r}
+by_user_sorted = by_user %>% 
+  arrange(desc(n_rides)) %>%
+  select(user_id,n_rides) %>%
+  ungroup() %>%
+  mutate(
+    all_rides_cumsum = cumsum(n_rides),
+    all_rides_cumsum_p = all_rides_cumsum/max(all_rides_cumsum)
+  ) 
+quantile(by_user_sorted$all_rides_cumsum_p, c(.01,.05,.10,.20) )
+```
+
+
+Summarizing trips per day
+```{r}
+by_day = trip_log %>%
+  arrange(start_time_iso) %>%
+  group_by(start_date,start_wday) %>%  
+  summarize(n_rides = n())  
+
+by_day %>% 
+  ggplot(aes(x=start_date,y=n_rides)) +
+  geom_line()
+```
+
+```{r}
+trip_log %>% 
+  ungroup() %>% group_by(start_wday) %>%
+  summarize(n_rides = n()) %>%
+  ggplot(aes(x=start_wday, y=n_rides,group=1)) + 
+    geom_line()
+
+```
+
+```{r}
+trip_log %>% 
+  ungroup() %>%
+  arrange(start_time_iso) %>%
+  group_by(time_h) %>%
+  summarize(n_rides = n()) %>%
+  ggplot(aes(x=time_h, y=n_rides)) +
+  geom_line()
+
+
+
+```
